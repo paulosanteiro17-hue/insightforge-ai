@@ -1,0 +1,9 @@
+external_id,name,email,company,status,acquired_at
+CUS-1042,Maya Bennett,maya.bennett@northstarstudio.example,Northstar Studio,active,2025-09-12T14:30:00Z
+CUS-1043,Ethan Cole,ethan.cole@cedarandloom.example,Cedar & Loom,active,2025-10-03T09:15:00Z
+CUS-1044,Sofia Ramirez,sofia.ramirez@harborwell.example,Harborwell Health,active,2025-11-18T17:45:00Z
+CUS-1045,Noah Kim,noah.kim@fieldnote.example,Fieldnote Creative,at_risk,2026-01-07T11:20:00Z
+CUS-1046,Avery Morgan,avery.morgan@juniperworks.example,Juniper Works,active,2026-02-24T15:05:00Z
+CUS-1047,Elena Rossi,elena.rossi@lumenroasters.example,Lumen Roasters,inactive,2026-03-16T08:40:00Z
+CUS-1048,Marcus Reed,marcus.reed@brightpath.example,Brightpath Learning,active,2026-04-09T13:10:00Z
+CUS-1049,Priya Shah,priya.shah@orbitandco.example,Orbit & Co.,active,2026-05-21T16:25:00Z

@@ -1,0 +1,9 @@
+{
+  "name": "InsightForge AI",
+  "short_name": "InsightForge",
+  "description": "AI-powered business analytics for growing teams.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f7",
+  "theme_color": "#071a20"
+}

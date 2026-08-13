@@ -1,0 +1,5 @@
+.next/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo

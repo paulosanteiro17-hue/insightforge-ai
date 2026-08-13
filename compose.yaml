@@ -1,0 +1,157 @@
+name: insightforge-ai
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-insightforge}
+      POSTGRES_USER: ${POSTGRES_USER:-insightforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks:
+      - insightforge
+
+  api:
+    build:
+      context: ./apps/api
+      target: runtime
+    restart: unless-stopped
+    environment: &api_environment
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://insightforge:local-development-only@postgres:5432/insightforge}
+      INSIGHTFORGE_ENVIRONMENT: development
+      INSIGHTFORGE_LOG_LEVEL: ${INSIGHTFORGE_LOG_LEVEL:-INFO}
+      INSIGHTFORGE_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      INSIGHTFORGE_ALLOWED_HOSTS: '["localhost","127.0.0.1","api"]'
+      INSIGHTFORGE_CSRF_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      INSIGHTFORGE_CSRF_SIGNING_KEY: ${INSIGHTFORGE_CSRF_SIGNING_KEY:-local-compose-csrf-key-change-before-deployment}
+      INSIGHTFORGE_SESSION_COOKIE_SECURE: "false"
+      INSIGHTFORGE_SESSION_IDLE_MINUTES: ${INSIGHTFORGE_SESSION_IDLE_MINUTES:-60}
+      INSIGHTFORGE_SESSION_ABSOLUTE_HOURS: ${INSIGHTFORGE_SESSION_ABSOLUTE_HOURS:-168}
+      INSIGHTFORGE_AUTH_GLOBAL_LIMIT: ${INSIGHTFORGE_AUTH_GLOBAL_LIMIT:-120}
+      INSIGHTFORGE_AUTH_GLOBAL_WINDOW_SECONDS: ${INSIGHTFORGE_AUTH_GLOBAL_WINDOW_SECONDS:-60}
+      INSIGHTFORGE_LOGIN_ACCOUNT_LIMIT: ${INSIGHTFORGE_LOGIN_ACCOUNT_LIMIT:-10}
+      INSIGHTFORGE_LOGIN_ACCOUNT_WINDOW_SECONDS: ${INSIGHTFORGE_LOGIN_ACCOUNT_WINDOW_SECONDS:-300}
+      INSIGHTFORGE_REGISTER_BROWSER_LIMIT: ${INSIGHTFORGE_REGISTER_BROWSER_LIMIT:-5}
+      INSIGHTFORGE_REGISTER_BROWSER_WINDOW_SECONDS: ${INSIGHTFORGE_REGISTER_BROWSER_WINDOW_SECONDS:-3600}
+      INSIGHTFORGE_DEMO_BROWSER_LIMIT: ${INSIGHTFORGE_DEMO_BROWSER_LIMIT:-3}
+      INSIGHTFORGE_DEMO_BROWSER_WINDOW_SECONDS: ${INSIGHTFORGE_DEMO_BROWSER_WINDOW_SECONDS:-3600}
+      INSIGHTFORGE_DEMO_GLOBAL_LIMIT: ${INSIGHTFORGE_DEMO_GLOBAL_LIMIT:-30}
+      INSIGHTFORGE_DEMO_GLOBAL_WINDOW_SECONDS: ${INSIGHTFORGE_DEMO_GLOBAL_WINDOW_SECONDS:-60}
+      INSIGHTFORGE_PRIVATE_STORAGE_PATH: /app/.data/private
+      INSIGHTFORGE_UPLOAD_MAX_BYTES: ${INSIGHTFORGE_UPLOAD_MAX_BYTES:-10485760}
+      INSIGHTFORGE_UPLOAD_MAX_ROWS: ${INSIGHTFORGE_UPLOAD_MAX_ROWS:-50000}
+      INSIGHTFORGE_IMPORT_MAX_ERRORS: ${INSIGHTFORGE_IMPORT_MAX_ERRORS:-100}
+      INSIGHTFORGE_IMPORT_PREVIEW_ROWS: ${INSIGHTFORGE_IMPORT_PREVIEW_ROWS:-20}
+      INSIGHTFORGE_IMPORT_RETENTION_HOURS: ${INSIGHTFORGE_IMPORT_RETENTION_HOURS:-168}
+      INSIGHTFORGE_AI_PROVIDER: ${INSIGHTFORGE_AI_PROVIDER:-deterministic}
+      INSIGHTFORGE_DEMO_MODE: ${INSIGHTFORGE_DEMO_MODE:-true}
+      INSIGHTFORGE_OPENAI_API_KEY: ${INSIGHTFORGE_OPENAI_API_KEY:-}
+      INSIGHTFORGE_OPENAI_MODEL: ${INSIGHTFORGE_OPENAI_MODEL:-gpt-5.6-sol}
+      INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS: ${INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS:-20}
+    ports:
+      - "8000:8000"
+    volumes:
+      - private_storage:/app/.data/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    networks:
+      - insightforge
+
+  migrate:
+    build:
+      context: ./apps/api
+      target: runtime
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://insightforge:local-development-only@postgres:5432/insightforge}
+      INSIGHTFORGE_ENVIRONMENT: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - insightforge
+
+  worker:
+    build:
+      context: ./apps/api
+      target: runtime
+    restart: unless-stopped
+    command: ["python", "-m", "insightforge.worker"]
+    environment: *api_environment
+    volumes:
+      - private_storage:/app/.data/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    networks:
+      - insightforge
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        API_INTERNAL_URL: http://api:8000
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - insightforge
+
+volumes:
+  postgres_data:
+  private_storage:
+
+networks:
+  insightforge:
+    driver: bridge

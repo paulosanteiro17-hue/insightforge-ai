@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="InsightForge AI">
+  <rect width="64" height="64" rx="16" fill="#071a20" />
+  <path d="M17 42V26l8 5v11H17Zm11 0V18l8 5v19h-8Zm11 0V12l8 5v25h-8Z" fill="#61d4c0" />
+  <circle cx="21" cy="20" r="4" fill="#ff806a" />
+</svg>

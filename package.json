@@ -1,0 +1,51 @@
+{
+  "name": "insightforge-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered, multi-tenant SaaS analytics platform for growing businesses.",
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20.9.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@11.8.0",
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "unrs-resolver@1.12.2": true
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names WEB,API,WORKER --prefix-colors cyan,magenta,yellow \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:worker\"",
+    "dev:web": "npm run dev --workspace @insightforge/web",
+    "dev:api": "uv run --project apps/api --no-sync uvicorn --app-dir apps/api/src insightforge.main:app --reload --reload-dir apps/api/src --port 8000",
+    "dev:worker": "uv run --project apps/api --no-sync python apps/api/scripts/run_worker.py",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "npm run lint --workspace @insightforge/web",
+    "lint:api": "uv run --project apps/api --no-sync ruff check apps/api",
+    "format": "npm run format:prettier && npm run format:api",
+    "format:prettier": "prettier --write .",
+    "format:web": "npm run format --workspace @insightforge/web",
+    "format:api": "uv run --project apps/api --no-sync ruff format apps/api",
+    "format:check": "npm run format:check:prettier && uv run --project apps/api --no-sync ruff format --check apps/api",
+    "format:check:prettier": "prettier --check .",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api",
+    "typecheck:web": "npm run typecheck --workspace @insightforge/web",
+    "typecheck:api": "uv run --project apps/api --no-sync mypy apps/api/src",
+    "test": "npm run test:web && npm run test:api",
+    "test:web": "npm run test --workspace @insightforge/web",
+    "test:api": "uv run --project apps/api --no-sync pytest apps/api",
+    "test:e2e": "npm run test:e2e --workspace @insightforge/web",
+    "audit:content": "node scripts/audit-content.mjs",
+    "audit:secrets": "node scripts/audit-secrets.mjs",
+    "build": "npm run build:web && npm run build:api",
+    "build:web": "npm run build --workspace @insightforge/web",
+    "build:api": "uv build --project apps/api",
+    "verify": "npm run audit:content && npm run audit:secrets && npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4",
+    "prettier": "3.9.6",
+    "prettier-plugin-tailwindcss": "0.8.1"
+  }
+}

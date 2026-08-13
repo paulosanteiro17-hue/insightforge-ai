@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-ink-950: #07111f;
+  --color-ink-900: #0d1a2b;
+  --color-ink-800: #15263b;
+  --color-ink-700: #263b55;
+  --color-ink-600: #405873;
+  --color-ink-500: #4b627b;
+  --color-ink-400: #5a7087;
+  --color-ink-300: #c4cfdb;
+  --color-ink-200: #dce3ea;
+  --color-ink-100: #edf1f5;
+  --color-ink-50: #f7f9fb;
+
+  --color-teal-800: #033d38;
+  --color-teal-700: #044d47;
+  --color-teal-600: #066158;
+  --color-teal-500: #08756c;
+  --color-teal-400: #35b7a8;
+  --color-teal-300: #7bd4c8;
+  --color-teal-200: #afe5dd;
+  --color-teal-100: #d9f4ef;
+  --color-teal-50: #effbf8;
+
+  --color-coral-700: #9d342d;
+  --color-coral-600: #b54136;
+  --color-coral-500: #ef765f;
+  --color-coral-300: #f6aa9c;
+  --color-coral-100: #fee4de;
+  --color-coral-50: #fff5f2;
+
+  --shadow-soft: 0 18px 55px -26px rgb(7 17 31 / 0.24);
+  --shadow-panel: 0 8px 30px -18px rgb(7 17 31 / 0.2);
+}
+
+:root {
+  color-scheme: light;
+  --page-background: #f7f9fb;
+  --panel-background: #ffffff;
+  --focus-ring: #0f9f8f;
+}
+
+* {
+  border-color: #dce3ea;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-width: 320px;
+  background: var(--page-background);
+  color: #0d1a2b;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus-ring) 70%, white);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #b8ebe2;
+  color: #07111f;
+}
+
+.marketing-grid {
+  background-image:
+    linear-gradient(to right, rgb(147 164 184 / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(147 164 184 / 0.1) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
+}
+
+.fine-noise {
+  background-image: radial-gradient(
+    rgb(147 164 184 / 0.2) 0.7px,
+    transparent 0.7px
+  );
+  background-size: 7px 7px;
+}
+
+.scrollbar-subtle {
+  scrollbar-color: #c4cfdb transparent;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

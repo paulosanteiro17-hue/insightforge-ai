@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit English content and text encoding
+        run: npm run audit:content
+
+      - name: Scan repository text for committed credentials
+        run: npm run audit:secrets
+
+      - name: Check formatting
+        run: npm run format:check:prettier
+
+      - name: Lint
+        run: npm run lint --workspace @insightforge/web
+
+      - name: Type-check
+        run: npm run typecheck --workspace @insightforge/web
+
+      - name: Run component tests
+        run: npm run test --workspace @insightforge/web
+
+      - name: Build production application
+        run: npm run build --workspace @insightforge/web
+        env:
+          API_INTERNAL_URL: http://127.0.0.1:8000
+          NEXT_PUBLIC_API_BASE_URL: /api/v1
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser journeys
+        run: npm run test:e2e --workspace @insightforge/web
+
+  api:
+    name: API quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: insightforge_test
+          POSTGRES_USER: insightforge
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U insightforge -d insightforge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      INSIGHTFORGE_ENVIRONMENT: testing
+      DATABASE_URL: postgresql+asyncpg://insightforge:test-only-password@127.0.0.1:5432/insightforge_test
+      INSIGHTFORGE_TEST_DATABASE_URL: postgresql+asyncpg://insightforge:test-only-password@127.0.0.1:5432/insightforge_test
+      INSIGHTFORGE_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      INSIGHTFORGE_CSRF_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      INSIGHTFORGE_CSRF_SIGNING_KEY: ci-only-csrf-signing-key-that-is-not-a-secret
+      INSIGHTFORGE_ALLOWED_HOSTS: '["localhost","127.0.0.1","testserver"]'
+      INSIGHTFORGE_DEMO_MODE: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --project apps/api --all-groups --locked --no-editable
+
+      - name: Check formatting
+        run: uv run --project apps/api --no-sync ruff format --check apps/api
+
+      - name: Lint
+        run: uv run --project apps/api --no-sync ruff check apps/api
+
+      - name: Type-check
+        run: uv run --project apps/api --no-sync mypy apps/api/src
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: uv run --no-sync alembic upgrade head
+
+      - name: Run tests
+        run: uv run --project apps/api --no-sync pytest apps/api
+
+      - name: Build package
+        run: uv build --project apps/api
+
+  compose:
+    name: Integrated build and smoke test
+    needs: [web, api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build integrated stack
+        run: docker compose build
+
+      - name: Start integrated stack
+        run: docker compose up --detach --wait --wait-timeout 180
+
+      - name: Smoke-test public and API health routes
+        run: |
+          curl --fail --silent --show-error http://localhost:3000/ > /dev/null
+          curl --fail --silent --show-error http://localhost:8000/health/live > /dev/null
+          curl --fail --silent --show-error http://localhost:8000/health/ready > /dev/null
+
+      - name: Show service logs after failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop integrated stack
+        if: always()
+        run: docker compose down --volumes

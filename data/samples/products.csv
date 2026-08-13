@@ -1,0 +1,9 @@
+external_id,sku,name,category,unit_price,status
+PRD-201,ANL-PRO-M,Analytics Pro Monthly,Subscriptions,249.00,active
+PRD-202,ANL-TEAM-M,Team Analytics Monthly,Subscriptions,399.00,active
+PRD-203,REV-AUDIT,Revenue Operations Audit,Services,1250.00,active
+PRD-204,DASH-SETUP,Executive Dashboard Setup,Services,850.00,active
+PRD-205,DATA-CLEAN,Data Quality Sprint,Services,640.00,active
+PRD-206,INSIGHT-PACK,Quarterly Insight Pack,Reports,320.00,active
+PRD-207,FORECAST-WS,Forecasting Workshop,Training,480.00,active
+PRD-208,LEGACY-BASIC,Legacy Analytics Basic,Subscriptions,99.00,archived
