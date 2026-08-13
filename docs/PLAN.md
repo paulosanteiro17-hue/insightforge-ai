@@ -76,17 +76,19 @@ Build a credible multi-tenant SaaS analytics product that lets a growing busines
 
 Results recorded on August 13, 2026:
 
-| Gate                                         | Evidence                                                                                                                |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Frontend unit/component suite                | 23 passing Vitest tests                                                                                                 |
-| Backend suite with fresh migrated PostgreSQL | 142 passing pytest tests                                                                                                |
-| Mock browser suite                           | 14 passing Playwright tests, including accessibility and console checks                                                 |
-| Live integrated browser suite                | One passing production-stack journey covering demo creation, worker insight generation, report generation, and download |
-| Static analysis                              | ESLint, TypeScript, Ruff, strict mypy, and formatting checks pass                                                       |
-| Supply chain                                 | Locked npm/uv dependencies; npm high-severity audit reports zero vulnerabilities                                        |
-| Content safety                               | English/UTF-8 audit and committed-credential audit pass                                                                 |
-| Builds                                       | Next.js production build and Python wheel/sdist build pass                                                              |
-| Containers                                   | Compose validation, image builds, migrations, API/web/worker/PostgreSQL startup, and health checks pass                 |
+| Gate                                         | Evidence                                                                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend unit/component suite                | 30 passing Vitest tests                                                                                                             |
+| Backend suite with fresh migrated PostgreSQL | 154 passing pytest tests                                                                                                            |
+| Mock browser suite                           | 14 passing Playwright tests, including accessibility and console checks                                                             |
+| Live integrated browser suite                | One passing production-stack journey covering demo creation, worker insight generation, report generation, and download             |
+| Static analysis                              | ESLint, TypeScript, Ruff, strict mypy, Bandit, Semgrep, and formatting checks pass; security scanners report no finding             |
+| Supply chain                                 | Locked npm/uv dependencies; npm/pip audits and final runtime-image scans report zero known or fixable high/critical vulnerabilities |
+| Content safety                               | English/UTF-8 audit and committed-credential audit pass                                                                             |
+| Builds                                       | Next.js production build and Python wheel/sdist build pass                                                                          |
+| Containers                                   | Read-only/no-capability Compose services, image builds, migrations, API/web/worker/PostgreSQL startup, and health checks pass       |
+
+The [internal security audit](SECURITY_AUDIT.md) records reviewed trust boundaries, remediated findings, passive HTTP results, container evidence, and residual hosted-release risks.
 
 The canonical local command is `npm run verify`. Browser and integrated container gates are documented in `README.md` and enforced separately in CI.
 

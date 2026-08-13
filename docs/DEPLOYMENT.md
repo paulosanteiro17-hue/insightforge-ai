@@ -60,20 +60,23 @@ Start from `.env.example`. Set values through the hosting provider's secret mana
 | `INSIGHTFORGE_CSRF_ALLOWED_ORIGINS`   |         Yes | Exact HTTPS origins accepted for unsafe requests             |
 | `INSIGHTFORGE_SESSION_COOKIE_SECURE`  |         Yes | Must be `true` outside local development                     |
 | `INSIGHTFORGE_CSRF_SIGNING_KEY`       |         Yes | Unique high-entropy deployment secret                        |
+| `INSIGHTFORGE_SESSION_IDLE_MINUTES`   |          No | Idle expiry; defaults to 30 minutes                          |
 | `INSIGHTFORGE_PRIVATE_STORAGE_PATH`   |         Yes | Persistent private artifact root shared by API and worker    |
+| `INSIGHTFORGE_REQUEST_MAX_BYTES`      |          No | Global body cap; must exceed the endpoint upload limit       |
 | `INSIGHTFORGE_AI_PROVIDER`            |         Yes | `deterministic` by default or explicitly configured provider |
 | `INSIGHTFORGE_OPENAI_API_KEY`         | Conditional | Required only for the OpenAI adapter; server-side secret     |
 | `INSIGHTFORGE_OPENAI_MODEL`           | Conditional | Explicit approved model when OpenAI is enabled               |
 | `INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS` |          No | Bounded provider request timeout                             |
 
-Production settings validation must reject insecure cookie mode, a development CSRF key, wildcard origins, unsupported providers, or missing conditional credentials.
+Production settings validation rejects insecure cookie mode, a development CSRF key, non-HTTPS or ambiguous origins, invalid hosts, a request cap that does not exceed the upload cap, unsupported providers, and missing conditional credentials.
 
 ### Web
 
-| Variable                   | Required | Purpose                                                |
-| -------------------------- | -------: | ------------------------------------------------------ |
-| `API_INTERNAL_URL`         |      Yes | Server-side upstream used by the `/api/v1` proxy       |
-| `NEXT_PUBLIC_API_BASE_URL` |      Yes | Browser-visible same-origin prefix; normally `/api/v1` |
+| Variable                   | Required | Purpose                                                           |
+| -------------------------- | -------: | ----------------------------------------------------------------- |
+| `API_INTERNAL_URL`         |      Yes | Exact server-side HTTP(S) upstream used by the `/api/v1` proxy    |
+| `PUBLIC_WEB_URL`           |      Yes | Exact public origin used for server requests and conditional HSTS |
+| `NEXT_PUBLIC_API_BASE_URL` |      Yes | Browser-visible same-origin prefix; normally `/api/v1`            |
 
 Never expose database, OpenAI, or storage credentials through a `NEXT_PUBLIC_` variable. Billing has no external provider credentials in this release candidate.
 
@@ -90,6 +93,8 @@ The stack exposes:
 - API: `http://localhost:8000`
 - OpenAPI UI in development: `http://localhost:8000/api/docs`
 - PostgreSQL: `localhost:5432`
+
+Published ports bind to `127.0.0.1` by default. Set `WEB_BIND_ADDRESS` or `API_BIND_ADDRESS` only when an intentional network boundary requires a different interface. Application containers run with read-only roots, no Linux capabilities, no-new-privileges, and bounded temporary filesystems; keep equivalent controls on the hosted runtime.
 
 Use `docker compose logs -f api worker web` for redacted service logs. Stop the stack with `docker compose down`. Add `--volumes` only when intentionally deleting all local database and private-storage data.
 
@@ -193,7 +198,7 @@ Only trust forwarded headers from known platform proxies. Restrict direct API in
 
 ## Release sequence
 
-1. CI validates lockfiles, formatting, linting, types, tests, migrations, builds, and the integrated Compose stack.
+1. CI validates lockfiles, dependency advisories, Python security checks, formatting, linting, types, tests, migrations, builds, and the integrated Compose stack.
 2. Build immutable web and API artifacts from the same commit.
 3. Back up/confirm restore readiness for schema-changing releases.
 4. Run backwards-compatible migrations once.

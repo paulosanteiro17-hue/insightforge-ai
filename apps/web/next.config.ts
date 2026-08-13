@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import {
+  configuredApiOrigin,
+  configuredWebOrigin
+} from "./src/lib/api/configured-origin";
 
-const apiOrigin = process.env.API_INTERNAL_URL?.replace(/\/$/, "");
+const apiOrigin = configuredApiOrigin();
+const publicWebOrigin = configuredWebOrigin();
 const runtimeAdapter =
   process.env.INSIGHTFORGE_API_MODE === "mock"
     ? "./src/lib/api/mock-adapter.ts"
@@ -12,6 +17,7 @@ const runtimeServerBootstrap =
     : "./src/lib/api/server-bootstrap.ts";
 const isDevelopment = process.env.NODE_ENV === "development";
 const useStandaloneOutput = process.env.INSIGHTFORGE_STANDARD_START !== "1";
+const enableHsts = publicWebOrigin.startsWith("https://");
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -52,22 +58,27 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Referrer-Policy", value: "no-referrer" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()"
-          }
+            value:
+              "camera=(), display-capture=(), geolocation=(), microphone=(), payment=(), usb=()"
+          },
+          ...(enableHsts
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000"
+                }
+              ]
+            : [])
         ]
       }
     ];
   },
   async rewrites() {
-    if (!apiOrigin) {
-      return [];
-    }
-
     return [
       {
         source: "/api/v1/:path*",

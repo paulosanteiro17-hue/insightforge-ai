@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type * as Backend from "@/lib/api/backend-contracts";
 import {
@@ -9,24 +9,22 @@ import {
   type OrganizationSummary,
   type SessionView
 } from "@/lib/api/contracts";
+import {
+  configuredApiOrigin,
+  configuredWebOrigin
+} from "@/lib/api/configured-origin";
 import { ApiHttpClient } from "@/lib/api/http-client";
 import { mapSession } from "@/lib/api/live-mappers";
 
-async function apiBaseUrl(): Promise<{ baseUrl: string; origin: string }> {
-  const requestHeaders = await headers();
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host") ??
-    "127.0.0.1:3000";
-  const requestOrigin = `${protocol}://${host}`;
-  const internalOrigin =
-    process.env.API_INTERNAL_URL?.replace(/\/$/, "") ?? requestOrigin;
-  return { baseUrl: `${internalOrigin}/api/v1`, origin: requestOrigin };
+function apiBaseUrl(): { baseUrl: string; origin: string } {
+  return {
+    baseUrl: `${configuredApiOrigin()}/api/v1`,
+    origin: configuredWebOrigin()
+  };
 }
 
 async function serverClient(): Promise<ApiHttpClient> {
-  const { baseUrl, origin } = await apiBaseUrl();
+  const { baseUrl, origin } = apiBaseUrl();
   return new ApiHttpClient({
     baseUrl,
     origin,

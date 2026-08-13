@@ -12,7 +12,7 @@ from insightforge.api.rate_limits import RequestRateLimits
 from insightforge.api.v1.router import router as v1_router
 from insightforge.core.config import Settings, get_settings
 from insightforge.core.logging import configure_logging
-from insightforge.core.middleware import RequestContextMiddleware
+from insightforge.core.middleware import RequestBodyLimitMiddleware, RequestContextMiddleware
 from insightforge.core.problems import install_exception_handlers
 from insightforge.db.session import get_engine
 
@@ -40,6 +40,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     install_exception_handlers(application)
     application.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_bytes=runtime_settings.request_max_bytes,
+    )
+    application.add_middleware(
         CORSMiddleware,
         allow_origins=runtime_settings.allowed_origins,
         allow_credentials=True,
@@ -65,7 +69,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         TrustedHostMiddleware,
         allowed_hosts=runtime_settings.allowed_hosts,
     )
-    application.add_middleware(RequestContextMiddleware)
+    application.add_middleware(
+        RequestContextMiddleware,
+        enable_hsts=runtime_settings.environment in {"staging", "production"},
+    )
     application.include_router(health_router)
     application.include_router(v1_router, prefix=runtime_settings.api_prefix)
     return application

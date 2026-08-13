@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
     )
 
     session_cookie_secure: bool = False
-    session_idle_minutes: int = Field(default=10_080, ge=5, le=43_200)
+    session_idle_minutes: int = Field(default=30, ge=5, le=43_200)
     session_absolute_hours: int = Field(default=720, ge=1, le=2_160)
     demo_session_hours: int = Field(default=8, ge=1, le=24)
     session_activity_write_interval_seconds: int = Field(default=300, ge=30, le=3_600)
@@ -77,6 +78,11 @@ class Settings(BaseSettings):
 
     private_storage_path: Path = Path(".data/private")
     upload_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1, le=100 * 1024 * 1024)
+    request_max_bytes: int = Field(
+        default=12 * 1024 * 1024,
+        ge=1 * 1024 * 1024,
+        le=128 * 1024 * 1024,
+    )
     upload_max_rows: int = Field(default=50_000, ge=1, le=500_000)
     import_max_errors: int = Field(default=100, ge=1, le=1_000)
     import_preview_rows: int = Field(default=20, ge=0, le=100)
@@ -110,10 +116,48 @@ class Settings(BaseSettings):
 
     @field_validator("allowed_origins", "csrf_allowed_origins")
     @classmethod
-    def reject_wildcard_origins(cls, values: list[str]) -> list[str]:
-        normalized = [value.rstrip("/") for value in values]
-        if "*" in normalized:
-            raise ValueError("Wildcard origins are not allowed with credentialed requests.")
+    def validate_origins(cls, values: list[str]) -> list[str]:
+        normalized: list[str] = []
+        for value in values:
+            candidate = value.strip().rstrip("/")
+            parsed = urlsplit(candidate)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.hostname is None
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path
+                or parsed.query
+                or parsed.fragment
+                or "*" in candidate
+            ):
+                raise ValueError(
+                    "Origins must be exact HTTP or HTTPS origins without credentials, "
+                    "wildcards, paths, queries, or fragments."
+                )
+            normalized.append(candidate)
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Duplicate origins are not allowed.")
+        return normalized
+
+    @field_validator("allowed_hosts")
+    @classmethod
+    def validate_allowed_hosts(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip().casefold() for value in values]
+        if not normalized or any(
+            not value
+            or "*" in value
+            or "://" in value
+            or "/" in value
+            or "\\" in value
+            or "@" in value
+            or any(character.isspace() for character in value)
+            for value in normalized
+        ):
+            raise ValueError("Allowed hosts must be explicit host patterns without URLs or paths.")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Duplicate allowed hosts are not allowed.")
         return normalized
 
     @field_validator("log_level")
@@ -133,6 +177,11 @@ class Settings(BaseSettings):
         if self.environment in {"staging", "production"}:
             if not self.session_cookie_secure:
                 raise ValueError("Secure session cookies are required outside local environments.")
+            if any(
+                urlsplit(origin).scheme != "https"
+                for origin in {*self.allowed_origins, *self.csrf_allowed_origins}
+            ):
+                raise ValueError("HTTPS origins are required outside local environments.")
             signing_key = self.csrf_signing_key.get_secret_value().casefold()
             unsafe_key_prefixes = (
                 "development-only",
@@ -142,6 +191,10 @@ class Settings(BaseSettings):
             )
             if signing_key.startswith(unsafe_key_prefixes):
                 raise ValueError("A deployment-specific CSRF signing key is required.")
+        if not set(self.csrf_allowed_origins).issubset(self.allowed_origins):
+            raise ValueError("CSRF origins must also be present in the CORS origin allowlist.")
+        if self.request_max_bytes <= self.upload_max_bytes:
+            raise ValueError("REQUEST_MAX_BYTES must be greater than UPLOAD_MAX_BYTES.")
         return self
 
     @property
@@ -152,7 +205,15 @@ class Settings(BaseSettings):
 
     @property
     def csrf_cookie_name(self) -> str:
-        return "insightforge_csrf"
+        if self.session_cookie_secure:
+            return "__Host-insightforge_csrf"
+        return "insightforge_csrf_local"
+
+    @property
+    def demo_scope_cookie_name(self) -> str:
+        if self.session_cookie_secure:
+            return "__Host-insightforge_demo_scope"
+        return "insightforge_demo_scope_local"
 
     @property
     def docs_url(self) -> str | None:

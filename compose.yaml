@@ -28,14 +28,14 @@ services:
     restart: unless-stopped
     environment: &api_environment
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://insightforge:local-development-only@postgres:5432/insightforge}
-      INSIGHTFORGE_ENVIRONMENT: development
+      INSIGHTFORGE_ENVIRONMENT: ${INSIGHTFORGE_ENVIRONMENT:-development}
       INSIGHTFORGE_LOG_LEVEL: ${INSIGHTFORGE_LOG_LEVEL:-INFO}
-      INSIGHTFORGE_ALLOWED_ORIGINS: '["http://localhost:3000"]'
-      INSIGHTFORGE_ALLOWED_HOSTS: '["localhost","127.0.0.1","api"]'
-      INSIGHTFORGE_CSRF_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+      INSIGHTFORGE_ALLOWED_ORIGINS: '${INSIGHTFORGE_ALLOWED_ORIGINS:-["http://localhost:3000"]}'
+      INSIGHTFORGE_ALLOWED_HOSTS: '${INSIGHTFORGE_ALLOWED_HOSTS:-["localhost","127.0.0.1","api"]}'
+      INSIGHTFORGE_CSRF_ALLOWED_ORIGINS: '${INSIGHTFORGE_CSRF_ALLOWED_ORIGINS:-["http://localhost:3000"]}'
       INSIGHTFORGE_CSRF_SIGNING_KEY: ${INSIGHTFORGE_CSRF_SIGNING_KEY:-local-compose-csrf-key-change-before-deployment}
-      INSIGHTFORGE_SESSION_COOKIE_SECURE: "false"
-      INSIGHTFORGE_SESSION_IDLE_MINUTES: ${INSIGHTFORGE_SESSION_IDLE_MINUTES:-60}
+      INSIGHTFORGE_SESSION_COOKIE_SECURE: ${INSIGHTFORGE_SESSION_COOKIE_SECURE:-false}
+      INSIGHTFORGE_SESSION_IDLE_MINUTES: ${INSIGHTFORGE_SESSION_IDLE_MINUTES:-30}
       INSIGHTFORGE_SESSION_ABSOLUTE_HOURS: ${INSIGHTFORGE_SESSION_ABSOLUTE_HOURS:-168}
       INSIGHTFORGE_AUTH_GLOBAL_LIMIT: ${INSIGHTFORGE_AUTH_GLOBAL_LIMIT:-120}
       INSIGHTFORGE_AUTH_GLOBAL_WINDOW_SECONDS: ${INSIGHTFORGE_AUTH_GLOBAL_WINDOW_SECONDS:-60}
@@ -49,6 +49,7 @@ services:
       INSIGHTFORGE_DEMO_GLOBAL_WINDOW_SECONDS: ${INSIGHTFORGE_DEMO_GLOBAL_WINDOW_SECONDS:-60}
       INSIGHTFORGE_PRIVATE_STORAGE_PATH: /app/.data/private
       INSIGHTFORGE_UPLOAD_MAX_BYTES: ${INSIGHTFORGE_UPLOAD_MAX_BYTES:-10485760}
+      INSIGHTFORGE_REQUEST_MAX_BYTES: ${INSIGHTFORGE_REQUEST_MAX_BYTES:-12582912}
       INSIGHTFORGE_UPLOAD_MAX_ROWS: ${INSIGHTFORGE_UPLOAD_MAX_ROWS:-50000}
       INSIGHTFORGE_IMPORT_MAX_ERRORS: ${INSIGHTFORGE_IMPORT_MAX_ERRORS:-100}
       INSIGHTFORGE_IMPORT_PREVIEW_ROWS: ${INSIGHTFORGE_IMPORT_PREVIEW_ROWS:-20}
@@ -59,7 +60,7 @@ services:
       INSIGHTFORGE_OPENAI_MODEL: ${INSIGHTFORGE_OPENAI_MODEL:-gpt-5.6-sol}
       INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS: ${INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS:-20}
     ports:
-      - "8000:8000"
+      - "${API_BIND_ADDRESS:-127.0.0.1}:8000:8000"
     volumes:
       - private_storage:/app/.data/private
     depends_on:
@@ -79,6 +80,13 @@ services:
       timeout: 3s
       retries: 12
       start_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - insightforge
 
@@ -94,6 +102,13 @@ services:
       postgres:
         condition: service_healthy
     restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - insightforge
 
@@ -113,6 +128,13 @@ services:
         condition: service_completed_successfully
       api:
         condition: service_started
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - insightforge
 
@@ -123,13 +145,15 @@ services:
       target: runtime
       args:
         API_INTERNAL_URL: http://api:8000
+        PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3000}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       API_INTERNAL_URL: http://api:8000
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:3000}
       NEXT_PUBLIC_API_BASE_URL: /api/v1
     ports:
-      - "3000:3000"
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:3000:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -145,6 +169,14 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=64m
+      - /app/apps/web/.next/cache:uid=10001,gid=10001,mode=0700,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - insightforge
 

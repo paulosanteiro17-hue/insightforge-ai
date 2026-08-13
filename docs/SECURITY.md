@@ -13,7 +13,8 @@ Protected assets include account/session credentials, organization business reco
 - Credential errors are generic.
 - Session tokens contain at least 256 bits of randomness. Only SHA-256 digests are stored.
 - Sessions have idle/absolute expiry, revocation, safe client metadata digests, and server-side current-state checks.
-- Production startup rejects insecure session-cookie mode. The production cookie is Secure, HttpOnly, SameSite Lax, Path `/`, and uses a `__Host-` name.
+- The default session idle timeout is 30 minutes. Absolute expiry remains independently bounded and configurable.
+- Production startup rejects insecure session-cookie mode. The production session cookie is Secure, HttpOnly, SameSite Lax, Path `/`, and uses a `__Host-` name. CSRF and demo-scope cookies also use host-prefixed names in secure deployments.
 - Login, registration, demo creation, password change/recovery, invitation, Ask Your Data, insight generation, and report generation have bounded application rate limits. Public infrastructure still requires trusted edge limits.
 
 ## Password recovery
@@ -29,9 +30,9 @@ Protected assets include account/session credentials, organization business reco
 - Unsafe cookie-authenticated requests require double-submit CSRF.
 - Authenticated CSRF tokens are random and digest-bound to the session.
 - Pre-authentication CSRF tokens are HMAC-signed, time-bounded, and tied to the safe demo browser-scope workflow.
-- Unsafe requests validate exact allowed origins. CORS wildcard origins are rejected when credentials are enabled.
-- Trusted-host middleware restricts accepted hosts.
-- Next.js sends Content Security Policy, `X-Content-Type-Options`, `X-Frame-Options`, strict referrer policy, and a restrictive Permissions Policy.
+- Unsafe requests validate exact allowed origins. Origins cannot contain credentials, wildcards, paths, queries, or fragments; CSRF origins must also be in the CORS allowlist; staging and production require HTTPS.
+- Trusted-host middleware restricts accepted explicit hosts. Server-side web requests use configured upstream/public origins and never derive the upstream from a request Host header.
+- Next.js sends Content Security Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy: no-referrer`, a restrictive Permissions Policy, and HSTS when the configured public origin is HTTPS. The API sends the corresponding baseline and enables HSTS outside local development.
 - Token-bearing recovery/invitation pages do not load third-party analytics in this repository.
 
 ## Tenant isolation and permissions
@@ -59,6 +60,7 @@ PostgreSQL row-level security is not implemented or claimed. The application and
 
 ## CSV uploads and private artifacts
 
+- A global 12 MiB request-body cap runs before framework parsing and covers declared and streamed bodies. Configuration requires this cap to exceed the endpoint upload cap.
 - Upload size defaults to 10 MiB and row count to 50,000, with caps for columns, fields, preview rows, and reported errors.
 - Input is treated as inert UTF-8 CSV. Filename and MIME type are not trusted.
 - Exact versioned headers, data types, enums, dates, references, and duplicate rules are validated.
@@ -116,14 +118,16 @@ The included adapter uses a private local/mounted filesystem. A hosted deploymen
 ## Dependency and quality gates
 
 - npm and uv lockfiles are committed.
-- CI uses `npm ci` and `uv sync --locked`.
-- ESLint, Ruff security rules, strict mypy, TypeScript, tests, migrations, builds, content/encoding audit, secret audit, and integrated containers are release gates.
+- CI uses `npm ci` and `uv sync --locked`; third-party GitHub Actions are pinned to full commit SHAs, and Dependabot covers npm, uv, actions, and Docker inputs.
+- npm audit, pip-audit, Bandit, ESLint, Ruff security rules, strict mypy, TypeScript, tests, migrations, builds, content/encoding audit, secret audit, and integrated containers are release gates.
+- Runtime images remove build-only package managers. Compose application services use read-only root filesystems, no Linux capabilities, no-new-privileges, bounded temporary filesystems, and loopback-only published ports by default.
 - Playwright includes automated axe WCAG A/AA checks and representative console/page-error checks.
-- The recorded npm high-severity audit reports zero vulnerabilities as of August 13, 2026.
+- The August 13, 2026 internal review recorded zero known npm/Python dependency vulnerabilities, zero Bandit/Semgrep findings, zero fixable high/critical runtime-image findings, and zero OWASP ZAP passive failures. See [Security audit](SECURITY_AUDIT.md) for scope, remediations, evidence, and warning disposition.
 
 ## Residual risk and hosted-release requirements
 
-- No third-party penetration test or independent security audit has been performed.
+- No third-party penetration test or independent security audit has been performed; the recorded review is an internal engineering audit.
+- The static-compatible CSP currently permits inline framework scripts. Keep third-party scripts absent and adopt request nonces if the script trust boundary expands.
 - The in-process rate limiter is per API process; public deployment requires trusted edge/global abuse controls.
 - PostgreSQL RLS is absent; repository/policy/constraint discipline must remain covered by adversarial tenant tests.
 - Transactional email is absent; public recovery/invitation delivery needs a reviewed provider, redaction, retry, and abuse design.

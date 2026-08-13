@@ -56,7 +56,6 @@ from insightforge.services.auth import (
 from insightforge.services.organizations import OrganizationService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-DEMO_BROWSER_SCOPE_COOKIE = "insightforge_demo_scope"
 
 AuthServiceDependency = Annotated[AuthService, Depends(get_auth_service)]
 OrganizationServiceDependency = Annotated[OrganizationService, Depends(get_organization_service)]
@@ -187,17 +186,17 @@ async def issue_csrf_token(
     if identity is None:
         demo_scope = hash_token(token)
         if not constant_time_equal(
-            request.cookies.get(DEMO_BROWSER_SCOPE_COOKIE, ""),
+            request.cookies.get(settings.demo_scope_cookie_name, ""),
             demo_scope,
         ):
             response.set_cookie(
-                key=DEMO_BROWSER_SCOPE_COOKIE,
+                key=settings.demo_scope_cookie_name,
                 value=demo_scope,
                 max_age=86_400,
                 secure=settings.session_cookie_secure,
                 httponly=True,
                 samesite="lax",
-                path="/api/v1/auth/demo-session",
+                path="/",
             )
     response.headers["Cache-Control"] = "no-store"
     return DataEnvelope(data=CsrfTokenView(csrf_token=token))
@@ -330,7 +329,7 @@ async def create_demo_session(
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> DataEnvelope[SessionView]:
     key = validate_demo_idempotency_key(idempotency_key)
-    scope_cookie = request.cookies.get(DEMO_BROWSER_SCOPE_COOKIE)
+    scope_cookie = request.cookies.get(settings.demo_scope_cookie_name)
     if scope_cookie is None:
         raise AppError(
             status=400,

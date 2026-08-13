@@ -26,12 +26,12 @@ def test_csrf_endpoint_issues_readable_signed_cookie_without_database_access(app
 
     assert response.status_code == 200
     token = response.json()["data"]["csrf_token"]
-    assert response.cookies["insightforge_csrf"] == token
+    assert response.cookies["insightforge_csrf_local"] == token
     assert response.headers["Cache-Control"] == "no-store"
     csrf_cookie_header = next(
         value
         for value in response.headers.get_list("set-cookie")
-        if value.startswith("insightforge_csrf=")
+        if value.startswith("insightforge_csrf_local=")
     )
     assert "HttpOnly" not in csrf_cookie_header
 

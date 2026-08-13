@@ -159,10 +159,10 @@ Individual process commands are available as `npm run dev:web`, `npm run dev:api
 | Session security  | `INSIGHTFORGE_CSRF_SIGNING_KEY`, `INSIGHTFORGE_SESSION_COOKIE_SECURE`                             | Replace the local signing key and require secure cookies outside development |
 | Browser trust     | `INSIGHTFORGE_ALLOWED_ORIGINS`, `INSIGHTFORGE_ALLOWED_HOSTS`, `INSIGHTFORGE_CSRF_ALLOWED_ORIGINS` | Exact allowlists; no production wildcard                                     |
 | Private artifacts | `INSIGHTFORGE_PRIVATE_STORAGE_PATH`                                                               | Must be persistent and private when deployed                                 |
-| Upload limits     | `INSIGHTFORGE_UPLOAD_MAX_BYTES`, `INSIGHTFORGE_UPLOAD_MAX_ROWS`                                   | Defaults to 10 MiB and 50,000 data rows                                      |
+| Request limits    | `INSIGHTFORGE_REQUEST_MAX_BYTES`, `INSIGHTFORGE_UPLOAD_MAX_BYTES`, `INSIGHTFORGE_UPLOAD_MAX_ROWS` | Global 12 MiB body cap; uploads default to 10 MiB and 50,000 data rows       |
 | AI provider       | `INSIGHTFORGE_AI_PROVIDER`                                                                        | `deterministic` by default; set explicitly to enable the optional adapter    |
 | OpenAI            | `INSIGHTFORGE_OPENAI_API_KEY`, `INSIGHTFORGE_OPENAI_MODEL`, `INSIGHTFORGE_OPENAI_TIMEOUT_SECONDS` | Server-side only; never exposed through `NEXT_PUBLIC_*`                      |
-| Web proxy         | `API_INTERNAL_URL`, `NEXT_PUBLIC_API_BASE_URL`                                                    | The browser normally uses same-origin `/api/v1`                              |
+| Web proxy         | `API_INTERNAL_URL`, `PUBLIC_WEB_URL`, `NEXT_PUBLIC_API_BASE_URL`                                  | Exact configured origins; the browser normally uses same-origin `/api/v1`    |
 
 No OpenAI key is required for the complete demo and test path. Billing is intentionally a no-charge local service and has no payment credentials.
 
@@ -191,11 +191,15 @@ Results recorded on August 13, 2026:
 
 | Gate                                        |                                                           Result |
 | ------------------------------------------- | ---------------------------------------------------------------: |
-| Frontend Vitest                             |                                                 23 passing tests |
-| Backend pytest with migrated PostgreSQL     |                                                142 passing tests |
+| Frontend Vitest                             |                                                 30 passing tests |
+| Backend pytest with migrated PostgreSQL     |                                                154 passing tests |
 | Mock browser journeys                       | 14 passing tests, including axe accessibility and console checks |
 | Live production-stack browser journey       |                          1 passing end-to-end worker/report flow |
 | npm high-severity dependency audit          |                                                0 vulnerabilities |
+| Python production dependency audit          |                                                0 vulnerabilities |
+| Bandit and Semgrep security scans           |                                                       0 findings |
+| Runtime-image high/critical scan            |                                        0 fixable vulnerabilities |
+| OWASP ZAP passive baseline                  |                                     0 failures; 59 checks passed |
 | Ruff, mypy, ESLint, Prettier, TypeScript    |                                                          Passing |
 | Next.js and Python package builds           |                                                          Passing |
 | Docker images, migrations, readiness checks |                                                          Passing |
@@ -238,9 +242,11 @@ The implementation includes:
 - bounded uploads, file signature checks, private storage, safe previews, formula-safe exports, and retention cleanup;
 - allowlisted analytical intents with no arbitrary SQL, tools, URLs, or tenant selection;
 - structured redacted logs, request IDs, audit events, and repository secret scanning;
-- CSP, host validation, CORS allowlists, and additional browser security headers.
+- global request-body limits, fixed configured proxy origins, and short idle sessions;
+- CSP, HSTS on HTTPS deployments, host validation, exact CORS/CSRF allowlists, and additional browser security headers;
+- read-only, capability-free application containers and full-SHA-pinned CI actions.
 
-See [Security](docs/SECURITY.md) for assumptions, controls, residual risks, and reporting guidance.
+See [Security](docs/SECURITY.md) for the standing control model and [Security audit](docs/SECURITY_AUDIT.md) for the completed review, remediations, scan evidence, and residual risks.
 
 ## Repository structure
 
@@ -273,6 +279,7 @@ No public domain is currently published. Hosted deployment still requires real T
 | [API reference](docs/API.md)                | Versioned resources, permissions, envelopes, and behavior            |
 | [Data model](docs/DATA_MODEL.md)            | Tables, constraints, ownership, and retention                        |
 | [Security](docs/SECURITY.md)                | Threat model, controls, assumptions, and residual risk               |
+| [Security audit](docs/SECURITY_AUDIT.md)    | Reviewed findings, remediations, scan evidence, and limitations      |
 | [Deployment](docs/DEPLOYMENT.md)            | Configuration, migrations, health checks, rollback, and smoke gates  |
 | [Architecture decisions](docs/DECISIONS.md) | Accepted design choices and consequences                             |
 | [Implementation record](docs/PLAN.md)       | Delivered phases, evidence, limitations, and optional future work    |
