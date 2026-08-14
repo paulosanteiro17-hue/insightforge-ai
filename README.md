@@ -1,5 +1,9 @@
 # InsightForge AI
 
+[![CI](https://github.com/paulosanteiro17-hue/insightforge-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/paulosanteiro17-hue/insightforge-ai/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2563EB.svg)](LICENSE)
+[![Security review](https://img.shields.io/badge/security-reviewed-15803D.svg)](docs/SECURITY_AUDIT.md)
+
 InsightForge AI is a full-stack, multi-tenant SaaS analytics platform for growing businesses. It turns sales, customer, product, and order data into consistent KPIs, interactive dashboards, durable reports, and grounded AI-assisted explanations.
 
 The product is built as a deployable system rather than a collection of static screens: a Next.js application talks to a typed FastAPI API through a same-origin proxy, PostgreSQL is the source of truth, and a restart-safe worker processes imports, insights, reports, exports, and cleanup jobs.

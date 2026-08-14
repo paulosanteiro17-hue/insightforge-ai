@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible defect in InsightForge AI.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping improve InsightForge AI. Never include secrets, access tokens, or personal data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem and its impact.
+      placeholder: A concise explanation of what is not working.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reliable sequence that reproduces the problem using fictional data.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain what should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the commit, operating system, browser, and runtime versions when relevant.
+      placeholder: Commit, OS, browser, Node.js, Python, and Docker versions.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Add redacted logs or screenshots. Remove secrets and personal data first.
+    validations:
+      required: false
