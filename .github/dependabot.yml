@@ -5,19 +5,40 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
     open-pull-requests-limit: 5
+    groups:
+      javascript-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: uv
     directory: /apps/api
     schedule:
       interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
     open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: docker
     directories:
@@ -25,10 +46,24 @@ updates:
       - /apps/web
     schedule:
       interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
     open-pull-requests-limit: 5
+    groups:
+      runtime-images:
+        patterns:
+          - "*"
 
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
     open-pull-requests-limit: 5
+    groups:
+      compose-images:
+        patterns:
+          - "*"
