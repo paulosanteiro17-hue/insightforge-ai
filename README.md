@@ -24,26 +24,77 @@ The product is built as a deployable system rather than a collection of static s
 - No-charge demo billing with plan limits, usage, invoice records, and idempotent simulated plan changes. No payment provider or real charge is used.
 - Deterministic AI by default, with an optional OpenAI Responses adapter configured entirely on the server.
 
-## Screenshots
+## Product tour
+
+<p align="center">
+  <a href="docs/screenshots/02-overview-dashboard.png">
+    <img src="docs/screenshots/02-overview-dashboard.png" alt="InsightForge AI overview dashboard" width="100%" />
+  </a>
+</p>
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/01-landing-page.png" alt="InsightForge AI landing page" /></td>
-    <td><img src="docs/screenshots/02-overview-dashboard.png" alt="InsightForge AI overview dashboard" /></td>
+    <th width="50%">Analytics workspace</th>
+    <th width="50%">Grounded AI insights</th>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/03-analytics.png" alt="InsightForge AI analytics workspace" /></td>
-    <td><img src="docs/screenshots/04-customers.png" alt="InsightForge AI customer directory" /></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/05-ai-insights.png" alt="Grounded AI insight cards" /></td>
-    <td><img src="docs/screenshots/06-ask-your-data.png" alt="Ask Your Data grounded answer" /></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/07-reports.png" alt="InsightForge AI generated report history" /></td>
-    <td><img src="docs/screenshots/08-mobile-dashboard.png" alt="InsightForge AI mobile dashboard" /></td>
+    <td width="50%" valign="top">
+      <a href="docs/screenshots/03-analytics.png">
+        <img src="docs/screenshots/03-analytics.png" alt="InsightForge AI analytics workspace" width="100%" />
+      </a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/screenshots/05-ai-insights.png">
+        <img src="docs/screenshots/05-ai-insights.png" alt="Grounded AI insight cards" width="100%" />
+      </a>
+    </td>
   </tr>
 </table>
+
+<table>
+  <tr>
+    <th width="33%">Customers</th>
+    <th width="34%">Ask Your Data</th>
+    <th width="33%">Reports</th>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="docs/screenshots/04-customers.png">
+        <img src="docs/screenshots/04-customers.png" alt="InsightForge AI customer directory" width="100%" />
+      </a>
+    </td>
+    <td width="34%" valign="top">
+      <a href="docs/screenshots/06-ask-your-data.png">
+        <img src="docs/screenshots/06-ask-your-data.png" alt="Ask Your Data grounded answer" width="100%" />
+      </a>
+    </td>
+    <td width="33%" valign="top">
+      <a href="docs/screenshots/07-reports.png">
+        <img src="docs/screenshots/07-reports.png" alt="InsightForge AI generated report history" width="100%" />
+      </a>
+    </td>
+  </tr>
+</table>
+
+<details>
+  <summary><strong>View the complete marketing landing page</strong></summary>
+  <p align="center">
+    <a href="docs/screenshots/01-landing-page.png">
+      <img src="docs/screenshots/01-landing-page.png" alt="InsightForge AI landing page" width="100%" />
+    </a>
+  </p>
+</details>
+
+<details>
+  <summary><strong>View the complete mobile dashboard</strong></summary>
+  <p align="center">
+    <a href="docs/screenshots/08-mobile-dashboard.png">
+      <img src="docs/screenshots/08-mobile-dashboard.png" alt="InsightForge AI mobile dashboard" width="390" />
+    </a>
+  </p>
+</details>
+
+Click any screenshot to open the full-resolution capture.
 
 The checked capture workflow and publication notes are in [Portfolio presentation](docs/PORTFOLIO.md).
 
