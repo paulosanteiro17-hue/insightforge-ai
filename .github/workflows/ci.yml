@@ -112,7 +112,7 @@ jobs:
 
       - name: Audit Python dependencies
         run: |
-          uv export --project apps/api --frozen --no-dev --no-emit-project --no-hashes --output-file /tmp/insightforge-requirements.txt
+          uv export --project apps/api --frozen --all-groups --no-emit-project --no-hashes --output-file /tmp/insightforge-requirements.txt
           uvx --from pip-audit==2.10.1 pip-audit -r /tmp/insightforge-requirements.txt
 
       - name: Scan Python source for security issues

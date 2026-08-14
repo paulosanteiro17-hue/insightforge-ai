@@ -4,6 +4,8 @@
 
 An internal source, dependency, container, configuration, and passive HTTP security review was completed on August 13, 2026. All confirmed findings identified during this review were remediated and regression-tested. The final automated scans report no known application dependency vulnerability, no blocking static-analysis finding, no exposed repository secret, no fixable high/critical runtime-image vulnerability, and no passive HTTP failure.
 
+A publication follow-up on August 14, 2026 remediated a newly surfaced GitHub advisory affecting the development test runner and added grouped dependency-update automation.
+
 This is an engineering security review, not an independent penetration test or certification. Hosted infrastructure, TLS termination, managed-database permissions, backup restoration, edge rate limiting, and incident operations remain deployment-specific gates.
 
 ## Scope and method
@@ -31,6 +33,7 @@ The review also exercised the complete backend suite against a newly migrated Po
 | SEC-05 | Medium   | Application containers used writable root filesystems and retained default Linux capabilities. Published local ports listened on every interface.                                              | API, worker, migration, and web containers are read-only, drop all capabilities, prohibit privilege escalation, use bounded temporary filesystems, and bind host ports to loopback by default. |
 | SEC-06 | Low      | CI actions used mutable major tags and dependency security checks were not explicit gates.                                                                                                     | Third-party actions are pinned to full commit SHAs; npm, pip-audit, and Bandit gates plus Dependabot coverage were added.                                                                      |
 | SEC-07 | Low      | Auxiliary cookie names did not receive the same production host-prefix protection as the session cookie, and authenticated cache protection did not account for every cookie-setting response. | Secure deployments use `__Host-` names for session, CSRF, and demo-scope cookies. Cookie-setting responses are private and non-storable.                                                       |
+| SEC-08 | Medium   | GitHub's advisory database identified vulnerable temporary-directory handling in the development-only `pytest 8.4.2` lockfile entry after publication.                                         | `pytest` was upgraded to 9.1.1 and `pytest-asyncio` to 1.4.0. The patched toolchain passed the backend regression suite and remains covered by CI and Dependabot.                              |
 
 ## Verification evidence
 
